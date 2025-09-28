@@ -13,7 +13,17 @@ builder.Services.Configure<JsonOptions>(options =>
 
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1",
+        Title = "Package Stack API",
+        Description = "Minimal API to generate packages"
+    });
+});
+
 builder.Services.AddScoped<PackageSerializerService>();
 builder.Services.AddSingleton<WimBuilderService>();
 builder.Services.AddScoped<AzureBlobStorageService>();
@@ -22,10 +32,12 @@ builder.Services.AddHttpClient();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(options =>
 {
-    app.MapOpenApi();
-}
+    options.RoutePrefix = string.Empty;
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Package Stack API");
+});
 
 app.Services.GetService<WimBuilderService>();
 
@@ -40,26 +52,34 @@ app.MapPost("/api/NewProvisioningPackage", async (
         var packagePath = await packageSerializer.GeneratePackage(request: packageRequest);
         var fileStream = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.None,
             bufferSize: 1024 * 1024, useAsync: true);
-            
-        switch (packageRequest.ReturnType)
+
+        return packageRequest.ReturnType switch
         {
-            case ReturnType.Base64:
-                var cryptoStream = new CryptoStream(fileStream, new ToBase64Transform(), CryptoStreamMode.Read,
-                    leaveOpen: false);
-                return Results.Stream(cryptoStream, "text/plain");
-            case ReturnType.File:
-                return Results.Stream(fileStream, "application/octet-stream", $"{packageRequest.PackageConfig.Name}.ppkg");
-            case ReturnType.SasUrl:
-                var sasUrl = await azureBlobStorage.UploadAsync(fileStream, "packages", $"{packageRequest.PackageConfig.Name}.ppkg");
-                return Results.Ok(new { url = sasUrl });
-            default:
-                return Results.BadRequest();
-        }
+            ReturnType.Base64 => Results.Stream(new CryptoStream(fileStream, new ToBase64Transform(), CryptoStreamMode.Read, leaveOpen: false), "text/plain"),
+            ReturnType.File => Results.Stream(fileStream, "application/octet-stream", $"{packageRequest.PackageConfig.Name}.ppkg"),
+            ReturnType.SasUrl => Results.Ok(new { url = await azureBlobStorage.UploadAsync(fileStream, "packages", $"{packageRequest.PackageConfig.Name}.ppkg") }),
+            _ => Results.BadRequest()
+        };
+        
+        // switch (packageRequest.ReturnType)
+        // {
+        //     case ReturnType.Base64:
+        //         var cryptoStream = new CryptoStream(fileStream, new ToBase64Transform(), CryptoStreamMode.Read,
+        //             leaveOpen: false);
+        //         return Results.Stream(cryptoStream, "text/plain");
+        //     case ReturnType.File:
+        //         return Results.Stream(fileStream, "application/octet-stream", $"{packageRequest.PackageConfig.Name}.ppkg");
+        //     case ReturnType.SasUrl:
+        //         var sasUrl = await azureBlobStorage.UploadAsync(fileStream, "packages", $"{packageRequest.PackageConfig.Name}.ppkg");
+        //         return Results.Ok(new { url = sasUrl });
+        //     default:
+        //         return Results.BadRequest();
+        // }
     }
     catch (Exception ex)
     {
         return ex is WimBuilderException or AzureBlobStorageException ?
-            Results.InternalServerError(new { error = ex.Message, inner = ex.InnerException?.Message ?? "" }) :
+            Results.Json(new { error = ex.Message, inner = ex.InnerException?.Message ?? "" }, statusCode: 500) :
             Results.BadRequest(new { error = ex.Message, inner = ex.InnerException?.Message ?? "" });
     }
 });
