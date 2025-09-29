@@ -670,31 +670,24 @@ public class PackageSerializerService(IHttpClientFactory httpClientFactory, ILog
             );
         }
 
-        if (string.IsNullOrWhiteSpace(packageFile.Url) && string.IsNullOrWhiteSpace(packageFile.Base64))
-        {
-            throw new PackageSerializerException("PackageFile must have either a Url or a Base64 value");
-        }
-
-        if (!string.IsNullOrWhiteSpace(packageFile.Url) && !string.IsNullOrWhiteSpace(packageFile.Base64))
-        {
-            throw new PackageSerializerException("PackageFile must have either a Url or a Base64 value, but not both");
-        }
-
-        if (!string.IsNullOrWhiteSpace(packageFile.Url))
-        {
-            // Download File to temp directory
-            var httpClient = HttpClientFactory.CreateClient();
-            await using var downloadStream = await httpClient.GetStreamAsync(packageFile.Url);
-            await using var fileStream = new FileStream(filePath, FileMode.Create);
-            await downloadStream.CopyToAsync(fileStream);
-            downloadStream.Close();
-            fileStream.Close();
-        }
-
-        if (!string.IsNullOrWhiteSpace(packageFile.Base64))
-        {
-            await File.WriteAllBytesAsync(filePath, Convert.FromBase64String(packageFile.Base64));
-        }
+        switch (
+            string.IsNullOrWhiteSpace(packageFile.Url),
+            string.IsNullOrWhiteSpace(packageFile.Base64),
+            string.IsNullOrWhiteSpace(packageFile.Path)
+            )
+            {
+                case (false, true, true):
+                    await DownloadPackageFile(packageFile, filePath);
+                    break;
+                case (true, false, true):
+                    await DecodePackageFile(packageFile, filePath);
+                    break;
+                case (true, true, false):
+                    CopyPackageFile(packageFile, filePath);
+                    break;
+                default:
+                    throw new PackageSerializerException($"PackageFile {packageFile.Name} must exclusively have a Url, Base64, or Path value");
+            };
 
         if (Logger.IsEnabled(LogLevel.Information))
         {
@@ -714,6 +707,27 @@ public class PackageSerializerService(IHttpClientFactory httpClientFactory, ILog
         hashStream.Close();
 
         return hash64;
+    }
+
+    private async Task DownloadPackageFile(PackageFile packageFile, string filePath)
+    {
+        // Download File to temp directory
+        var httpClient = HttpClientFactory.CreateClient();
+        await using var downloadStream = await httpClient.GetStreamAsync(packageFile.Url);
+        await using var fileStream = new FileStream(filePath, FileMode.Create);
+        await downloadStream.CopyToAsync(fileStream);
+        downloadStream.Close();
+        fileStream.Close();
+    }
+
+    private async Task DecodePackageFile(PackageFile packageFile, string filePath)
+    {
+        await File.WriteAllBytesAsync(filePath, Convert.FromBase64String(packageFile.Base64!));
+    }
+
+    private void CopyPackageFile(PackageFile packageFile, string filePath)
+    {
+        File.Copy(packageFile.Path!, filePath, true);
     }
 }
 
