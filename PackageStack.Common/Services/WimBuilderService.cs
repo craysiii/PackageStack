@@ -8,16 +8,32 @@ public class WimBuilderService
         var libDir = "runtimes";
         string? libPath = null;
 
+        var arch = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X64 => "x64",
+            Architecture.X86 => "x86",
+            Architecture.Arm => "arm",
+            Architecture.Arm64 => "arm64",
+            _ => throw new PlatformNotSupportedException(
+                $"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}")
+        };
+        
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            libDir = Path.Combine(libDir, "win-x64", "native");
+            libDir = Path.Combine(libDir, $"win-{arch}", "native");
             libPath = Path.Combine(libBaseDir, libDir, "libwim-15.dll");
         }
         
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            libDir = Path.Combine(libDir, "linux-x64", "native");
+            libDir = Path.Combine(libDir, $"linux-{arch}", "native");
             libPath = Path.Combine(libBaseDir, libDir, "libwim.so");
+        }
+        
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            libDir = Path.Combine(libDir, $"osx-{arch}", "native");
+            libPath = Path.Combine(libBaseDir, libDir, "libwim.dylib");
         }
     
         if (libPath == null)
