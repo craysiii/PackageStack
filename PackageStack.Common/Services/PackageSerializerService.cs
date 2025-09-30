@@ -34,8 +34,23 @@ public class PackageSerializerService(IHttpClientFactory httpClientFactory, ILog
 
     ~PackageSerializerService()
     {
-        Directory.Delete(PackageDirectory!, true);
-        File.Delete(Path.Join(TempDirectory, $"{Request!.RequestId}.ppkg"));
+        try
+        {
+            if (Directory.Exists(PackageDirectory))
+            {
+                Directory.Delete(PackageDirectory, true);
+            }
+
+            if (File.Exists(Path.Join(TempDirectory, $"{Request!.RequestId}.ppkg")))
+            {
+                File.Delete(Path.Join(TempDirectory, $"{Request!.RequestId}.ppkg"));
+            }
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, "Error deleting temp directory - perhaps race condition?");
+        }
+        
     }
 
     public async Task<string> GeneratePackage(ProvisioningPackageRequest request)
@@ -687,7 +702,7 @@ public class PackageSerializerService(IHttpClientFactory httpClientFactory, ILog
                     break;
                 default:
                     throw new PackageSerializerException($"PackageFile {packageFile.Name} must exclusively have a Url, Base64, or Path value");
-            };
+            }
 
         if (Logger.IsEnabled(LogLevel.Information))
         {
