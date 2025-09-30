@@ -2,9 +2,9 @@
 
 public class WimBuilderService
 {
-    public WimBuilderService()
+    public WimBuilderService(string? baseDir = null)
     {
-        var libBaseDir = AppDomain.CurrentDomain.BaseDirectory;
+        var libBaseDir = baseDir ?? AppDomain.CurrentDomain.BaseDirectory;
         var libDir = "runtimes";
         string? libPath = null;
 
@@ -58,6 +58,11 @@ public class WimBuilderService
         }
         
         return outputPath;
+    }
+    
+    public static void Unload()
+    {
+        Wim.GlobalCleanup();
     }
 }
 
