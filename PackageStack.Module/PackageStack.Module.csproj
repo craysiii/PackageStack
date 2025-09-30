@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <AssemblyName>PackageStack.Module</AssemblyName>
+        <LangVersion>13</LangVersion>
+        <Nullable>enable</Nullable>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.7" />
+        <PackageReference Include="PowerShellStandard.Library" Version="5.1.0-preview-06">
+            <PrivateAssets>All</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\PackageStack.Common\PackageStack.Common.csproj" />
+    </ItemGroup>
+
+</Project>

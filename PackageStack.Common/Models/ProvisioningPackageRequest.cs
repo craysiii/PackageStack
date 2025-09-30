@@ -4,7 +4,7 @@ namespace PackageStack.Common.Models;
 public class ProvisioningPackageRequest
 {
     [JsonIgnore]
-    public  Guid RequestId { get; } = Guid.NewGuid();
+    public  Guid RequestId { get; init; } = Guid.NewGuid();
     [Required]
     public required ReturnType ReturnType { get; set; }
     [Required]
