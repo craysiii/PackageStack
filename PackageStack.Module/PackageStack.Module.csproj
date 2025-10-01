@@ -6,6 +6,7 @@
         <LangVersion>13</LangVersion>
         <Nullable>enable</Nullable>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <ModuleName>PackageStack</ModuleName>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,5 +19,13 @@
     <ItemGroup>
       <ProjectReference Include="..\PackageStack.Common\PackageStack.Common.csproj" />
     </ItemGroup>
+    
+    <Target Name="CopyModuleManifest" AfterTargets="Build">
+        <PropertyGroup>
+            <ModuleManifestPath>$(MSBuildProjectDirectory)\$(ModuleName).psd1</ModuleManifestPath>
+            <ModuleOutputDirectory>$(OutDir)</ModuleOutputDirectory>
+        </PropertyGroup>
+        <Copy SourceFiles="$(ModuleManifestPath)" DestinationFolder="$(ModuleOutputDirectory)" SkipUnchangedFiles="true" />
+    </Target>
 
 </Project>
