@@ -9,8 +9,8 @@
     <ItemGroup>
       <PackageReference Include="Azure.Storage.Blobs" Version="12.25.0" />
       <PackageReference Include="ManagedWimLib" Version="2.6.0" />
-      <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
-      <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="6.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
     </ItemGroup>
 
 </Project>
