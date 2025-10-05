@@ -30,7 +30,7 @@ CompanyName = ''
 Copyright = '(c) 2025 Charles Ray Shisler III. All rights reserved.'
 
 # Description of the functionality provided by this module
-# Description = ''
+Description = 'Generate Windows Provisioning Packages on Windows, macOS, and Linux'
 
 # Minimum version of the PowerShell engine required by this module
 PowerShellVersion = '7.4'
