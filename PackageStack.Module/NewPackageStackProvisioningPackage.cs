@@ -140,6 +140,7 @@ public class NewPackageStackProvisioningPackage : PSCmdlet
         {
             case "File":
                 fileStream.Close();
+                Environment.CurrentDirectory = SessionState.Path.CurrentFileSystemLocation.Path;
                 File.Copy(_tempPackagePath, OutputPath!, true);
                 WriteObject(
                     new
