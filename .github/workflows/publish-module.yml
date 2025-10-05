@@ -1,0 +1,60 @@
+name: Build and Publish PowerShell Module
+
+on:
+  push:
+    tags:
+      - 'v*'   # e.g. v1.0.0
+
+jobs:
+  build-and-publish:
+    runs-on: windows-latest
+
+    env:
+      MODULE_NAME: PackageStack
+      MODULE_DIR: module
+      BUILD_DIR: PackageStack.Module
+      OUTPUT_DIR: output
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build C# project
+        shell: pwsh
+        run: |
+          dotnet build "$env:BUILD_DIR" -c Release
+
+      - name: Create module output folder
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "$env:OUTPUT_DIR/$env:MODULE_NAME" | Out-Null
+          Copy-Item "$env:BUILD_DIR/bin/Release/net8.0/*" "$env:OUTPUT_DIR/$env:MODULE_NAME"
+          Copy-Item "PackageStack.Module/$env:MODULE_NAME.psd1" "$env:OUTPUT_DIR/$env:MODULE_NAME"
+
+      - name: Update module version from tag
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          Write-Host "Setting module version to $version"
+          $manifestPath = "$env:OUTPUT_DIR/$env:MODULE_NAME/$env:MODULE_NAME.psd1"
+          (Get-Content $manifestPath) -replace "ModuleVersion\s*=\s*'.*?'", "ModuleVersion = '$version'" | Set-Content $manifestPath
+
+      - name: Validate module manifest
+        shell: pwsh
+        run: |
+          Test-ModuleManifest -Path "$env:OUTPUT_DIR/$env:MODULE_NAME/$env:MODULE_NAME.psd1"
+
+      - name: Publish to PowerShell Gallery
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          Publish-Module -Path "$env:OUTPUT_DIR/$env:MODULE_NAME" `
+                         -NuGetApiKey $env:NUGET_API_KEY `
+                         -Verbose `
+                         -ErrorAction Stop
