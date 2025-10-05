@@ -141,17 +141,32 @@ public class NewPackageStackProvisioningPackage : PSCmdlet
             case "File":
                 fileStream.Close();
                 File.Copy(_tempPackagePath, OutputPath!, true);
-                WriteObject(OutputPath);
+                WriteObject(
+                    new
+                    {
+                        Path = OutputPath,
+                    }
+                );
                 break;
             case "Base64":
                 var cryptoStream = new CryptoStream(fileStream, new ToBase64Transform(), CryptoStreamMode.Read, leaveOpen: false);
-                WriteObject(new StreamReader(cryptoStream).ReadToEnd());
+                WriteObject(
+                    new
+                    {
+                        Encoded = new StreamReader(cryptoStream).ReadToEnd()
+                    }
+                );
                 fileStream.Close();
                 break;
             case "BlobStorage":
                 var url = _azureBlobStorageService!.UploadAsync(fileStream, ContainerName!, BlobName!).GetAwaiter().GetResult();
                 fileStream.Close();
-                WriteObject(url);
+                WriteObject(
+                    new
+                    {
+                        Url = url,
+                    }
+                );
                 break;
         }
         
