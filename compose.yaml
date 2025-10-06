@@ -1,0 +1,9 @@
+﻿services:
+  packagestack:
+    image: 'craysiii/packagestack:latest'
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      # AzureWebJobsStorage: # Required to upload to blob storage
+

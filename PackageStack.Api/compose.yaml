@@ -1,7 +1,0 @@
-﻿services:
-  packagestack.api:
-    image: packagestack.api
-    build:
-      context: .
-      dockerfile: PackageStack.Api/Dockerfile
-
