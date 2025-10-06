@@ -1,0 +1,331 @@
+﻿{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "Package Stack API",
+    "description": "Minimal API to generate packages",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/NewProvisioningPackage": {
+      "post": {
+        "tags": [
+          "PackageStack.Api"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvisioningPackageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Azure": {
+        "required": [
+          "bprt"
+        ],
+        "type": "object",
+        "properties": {
+          "authority": {
+            "type": "string",
+            "nullable": true
+          },
+          "bprt": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ComputerAccount": {
+        "required": [
+          "computer_name"
+        ],
+        "type": "object",
+        "properties": {
+          "computer_name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "account": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          },
+          "domain_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "account_ou": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OOBE": {
+        "type": "object",
+        "properties": {
+          "enable_cortana_voice": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "hide_oobe": {
+            "type": "boolean",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "OwnerType": {
+        "enum": [
+          "Microsoft",
+          "SiliconVendor",
+          "OEM",
+          "SystemIntegrator",
+          "MobileOperator",
+          "ITAdmin"
+        ],
+        "type": "string"
+      },
+      "PackageConfig": {
+        "required": [
+          "id",
+          "name",
+          "owner_type",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "version": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "owner_type": {
+            "$ref": "#/components/schemas/OwnerType"
+          },
+          "rank": {
+            "maximum": 99,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PackageFile": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "nullable": true
+          },
+          "base64": {
+            "type": "string",
+            "nullable": true
+          },
+          "path": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProvisioningCommand": {
+        "required": [
+          "command_line"
+        ],
+        "type": "object",
+        "properties": {
+          "command_line": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "command_file": {
+            "$ref": "#/components/schemas/PackageFile"
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageFile"
+            },
+            "nullable": true
+          },
+          "continue_install": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "restart_required": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "return_code_restart": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "return_code_success": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProvisioningPackageRequest": {
+        "required": [
+          "package_config",
+          "return_type"
+        ],
+        "type": "object",
+        "properties": {
+          "return_type": {
+            "$ref": "#/components/schemas/ReturnType"
+          },
+          "package_config": {
+            "$ref": "#/components/schemas/PackageConfig"
+          },
+          "azure": {
+            "$ref": "#/components/schemas/Azure"
+          },
+          "computer_account": {
+            "$ref": "#/components/schemas/ComputerAccount"
+          },
+          "oobe": {
+            "$ref": "#/components/schemas/OOBE"
+          },
+          "local_users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/User"
+            },
+            "nullable": true
+          },
+          "provisioning_commands": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProvisioningCommand"
+            },
+            "nullable": true
+          },
+          "wlan_settings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WLANSetting"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReturnType": {
+        "enum": [
+          "Base64",
+          "File",
+          "SasUrl"
+        ],
+        "type": "string"
+      },
+      "SecurityType": {
+        "enum": [
+          "Open",
+          "WEP",
+          "WPA2PSK"
+        ],
+        "type": "string"
+      },
+      "User": {
+        "required": [
+          "password",
+          "username"
+        ],
+        "type": "object",
+        "properties": {
+          "username": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "password": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "group": {
+            "$ref": "#/components/schemas/UserGroup"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "home_directory": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UserGroup": {
+        "enum": [
+          "Administrators",
+          "StandardUsers"
+        ],
+        "type": "string"
+      },
+      "WLANSetting": {
+        "required": [
+          "security_type",
+          "ssid"
+        ],
+        "type": "object",
+        "properties": {
+          "ssid": {
+            "type": "string",
+            "nullable": true
+          },
+          "auto_connect": {
+            "type": "boolean"
+          },
+          "hidden_network": {
+            "type": "boolean"
+          },
+          "security_type": {
+            "$ref": "#/components/schemas/SecurityType"
+          },
+          "security_key": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
