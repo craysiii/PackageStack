@@ -49,6 +49,14 @@ app.MapPost("/api/NewProvisioningPackage", async (
 {
     try
     {
+        switch (packageRequest.ReturnType)
+        {
+            case ReturnType.SasUrl when string.IsNullOrWhiteSpace(packageRequest.ContainerName):
+                return Results.BadRequest(new { error = "Container Name is required for SasUrl return type" });
+            case ReturnType.File or ReturnType.SasUrl when string.IsNullOrWhiteSpace(packageRequest.FileName):
+                return Results.BadRequest(new { error = "File Name is required for File or SasUrl return type" });
+        }
+
         var packagePath = await packageSerializer.GeneratePackage(request: packageRequest);
         var fileStream = new FileStream(packagePath, FileMode.Open, FileAccess.Read, FileShare.None,
             bufferSize: 1024 * 1024, useAsync: true);
@@ -56,25 +64,10 @@ app.MapPost("/api/NewProvisioningPackage", async (
         return packageRequest.ReturnType switch
         {
             ReturnType.Base64 => Results.Stream(new CryptoStream(fileStream, new ToBase64Transform(), CryptoStreamMode.Read, leaveOpen: false), "text/plain"),
-            ReturnType.File => Results.Stream(fileStream, "application/octet-stream", $"{packageRequest.PackageConfig.Name}.ppkg"),
-            ReturnType.SasUrl => Results.Ok(new { url = await azureBlobStorage.UploadAsync(fileStream, "packages", $"{packageRequest.PackageConfig.Name}.ppkg") }),
+            ReturnType.File => Results.Stream(fileStream, "application/octet-stream", packageRequest.FileName),
+            ReturnType.SasUrl => Results.Ok(new { url = await azureBlobStorage.UploadAsync(fileStream, packageRequest.ContainerName!, packageRequest.FileName!) }),
             _ => Results.BadRequest()
         };
-        
-        // switch (packageRequest.ReturnType)
-        // {
-        //     case ReturnType.Base64:
-        //         var cryptoStream = new CryptoStream(fileStream, new ToBase64Transform(), CryptoStreamMode.Read,
-        //             leaveOpen: false);
-        //         return Results.Stream(cryptoStream, "text/plain");
-        //     case ReturnType.File:
-        //         return Results.Stream(fileStream, "application/octet-stream", $"{packageRequest.PackageConfig.Name}.ppkg");
-        //     case ReturnType.SasUrl:
-        //         var sasUrl = await azureBlobStorage.UploadAsync(fileStream, "packages", $"{packageRequest.PackageConfig.Name}.ppkg");
-        //         return Results.Ok(new { url = sasUrl });
-        //     default:
-        //         return Results.BadRequest();
-        // }
     }
     catch (Exception ex)
     {

@@ -7,6 +7,8 @@ public class ProvisioningPackageRequest
     public  Guid RequestId { get; init; } = Guid.NewGuid();
     [Required]
     public required ReturnType ReturnType { get; set; }
+    public string? ContainerName { get; set; }
+    public string? FileName { get; set; }
     [Required]
     public required PackageConfig PackageConfig { get; set; }
     public Azure? Azure { get; set; }

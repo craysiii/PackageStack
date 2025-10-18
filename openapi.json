@@ -211,6 +211,14 @@
           "return_type": {
             "$ref": "#/components/schemas/ReturnType"
           },
+          "container_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "file_name": {
+            "type": "string",
+            "nullable": true
+          },
           "package_config": {
             "$ref": "#/components/schemas/PackageConfig"
           },

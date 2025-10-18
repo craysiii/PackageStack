@@ -7,6 +7,14 @@ public class NewProvisioningPackage(PackageSerializerService packageSerializer, 
     {
         var packageRequest = await req.ReadFromJsonAsync<ProvisioningPackageRequest>();
         if (packageRequest is null) return new BadRequestObjectResult(new { error = "Invalid request body" });
+        
+        switch (packageRequest.ReturnType)
+        {
+            case ReturnType.SasUrl when string.IsNullOrWhiteSpace(packageRequest.ContainerName):
+                return new BadRequestObjectResult(new { error = "Container Name is required for SasUrl return type" });
+            case ReturnType.File or ReturnType.SasUrl when string.IsNullOrWhiteSpace(packageRequest.FileName):
+                return new BadRequestObjectResult(new { error = "File Name is required for File or SasUrl return type" });
+        }
 
         try
         {
@@ -22,10 +30,10 @@ public class NewProvisioningPackage(PackageSerializerService packageSerializer, 
                 case ReturnType.File:
                     return new FileStreamResult(fileStream, "application/octet-stream")
                     {
-                        FileDownloadName = $"{packageRequest.PackageConfig.Name}.ppkg"
+                        FileDownloadName = packageRequest.FileName
                     };
                 case ReturnType.SasUrl:
-                    var sasUrl = await azureBlobStorage.UploadAsync(fileStream, "packages", $"{packageRequest.PackageConfig.Name}.ppkg");
+                    var sasUrl = await azureBlobStorage.UploadAsync(fileStream, packageRequest.ContainerName!, packageRequest.FileName!);
                     return new OkObjectResult(new { url = sasUrl });
                 default:
                     return new BadRequestResult();
